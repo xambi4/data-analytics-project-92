@@ -18,7 +18,7 @@ order by average_income
 
 with tab as (Select s.sales_person_id  as id,
 extract(DOW from s.sale_date) as weekdaynum,
-SUM(s.quantity * p.price) as income
+ROUND(SUM(s.quantity * p.price)) as income
 from sales s 
 inner join products p on s.product_id = p.product_id 
 group by s.sales_person_id, extract(DOW from s.sale_date))
