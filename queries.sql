@@ -38,3 +38,51 @@ inner join employees e on tab.id = e.employee_id
 order by weekdaynum, name 
 ---Третий отчет содержит информацию о выручке по дням недели. Каждая запись содержит имя и фамилию продавца, день недели и суммарную выручку.
 --- Отсортируйте данные по порядковому номеру дня недели и name
+
+select '16-25' as age_category, (select count(*) from customers c 
+where Age >= 16 and age <=25)  as count
+UNION
+select '26-40' as age_category, (select count(*) from customers c 
+where Age >= 26 and age <=40)  as count
+UNION
+select '40+' as age_category, (select count(*) from customers c 
+where Age > 40)  as count
+order by age_category
+
+---Первый отчет - количество покупателей в разных возрастных группах: 16-25, 26-40 и 40+. 
+---Итоговая таблица должна быть отсортирована по возрастным группам и содержать следующие поля: age_category и count 
+
+
+with tab as (select extract(year from s.sale_date) as years,
+extract(Month from s.sale_date) as months,
+count(distinct s.customer_id) as total_customers,
+ROUND(SUM(s.quantity*p.price)) as income from sales s 
+inner join products p on s.product_id = p.product_id 
+group by years,months
+order by years,months)
+
+select concat(years,'-', months) as date, total_customers, income from tab
+
+---Во втором отчете предоставьте данные по количеству уникальных покупателей и выручке, которую они принесли. 
+---Сгруппируйте данные по дате, которая представлена в числовом виде ГОД-МЕСЯЦ. 
+---Итоговая таблица должна быть отсортирована по дате по возрастанию и содержать следующие поля: date, total_customers, income 
+
+with tab as (select distinct s.customer_id  as customer,
+first_value(s.sale_date) over(partition by s.customer_id order by s.sale_date) as sale_date,
+s.sales_person_id  as seller from sales s
+inner join products p on s.product_id = p.product_id  where p.price = 0
+order by s.customer_id)
+
+select  concat(c.first_name,' ',c.last_name) as customer,
+sale_date,
+concat(e.first_name,' ',e.last_name) as seller
+from tab
+inner join customers c on c.customer_id  = tab.customer 
+INNER join employees e on e.employee_id = tab.seller
+
+---Третий отчет следует составить о покупателях, первая покупка которых была в ходе проведения акций (акционные товары отпускали со стоимостью равной 0).
+--- Итоговая таблица должна быть отсортирована по id покупателя. Таблица состоит из следующих полей:
+
+---customer - имя и фамилия покупателя
+---sale_date - дата покупки
+---seller - имя и фамилия продавца
